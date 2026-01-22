@@ -18,10 +18,6 @@ driver = webdriver.Chrome(service=service, options=chrome_options)
 driver.get('https://www.notino.de/cerave/moisturizers-feuchtigkeitscreme-spf-50/p-16130224/')
 time.sleep(5)
 
-# Save HTML for inspection
-with open('notino_page.html', 'w', encoding='utf-8') as f:
-    f.write(driver.page_source)
-
 soup = BeautifulSoup(driver.page_source, 'lxml')
 
 # Try to find h1
@@ -48,4 +44,4 @@ for tag in soup.find_all(['h2', 'h3', 'h4'])[:10]:
     print(f'  {tag.name}: {tag.get_text(strip=True)}')
 
 driver.quit()
-print('\nHTML saved to notino_page.html')
+print('\nInspection complete')

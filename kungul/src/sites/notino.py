@@ -32,14 +32,20 @@ class NotinoScraper(SiteScraper):
         )
         
         service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        try:
-            for url in urls:
+
+        for url in urls:
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            try:
                 driver.get(url)
                 # Wait longer for Cloudflare challenge to complete
                 print(f"Waiting for Cloudflare challenge to complete for {url}...")
                 time.sleep(10)
+                # If we got redirected to generic/404 page, retry once
+                if "Parfum & Kosmetik online shop" in driver.title or "nichts beschädigt" in driver.page_source:
+                    print("Detected generic/404 page, retrying once...")
+                    time.sleep(5)
+                    driver.get(url)
+                    time.sleep(8)
                 
                 # Wait for product content to appear (checking for specific element)
                 try:
@@ -54,11 +60,17 @@ class NotinoScraper(SiteScraper):
                 html = driver.page_source
                 yield self._parse_product(html, url)
                 time.sleep(2)  # Rate limiting
-        finally:
-            driver.quit()
+            finally:
+                driver.quit()
 
     def _parse_product(self, html: str, url: str) -> Product:
         soup = BeautifulSoup(html, "lxml")
+
+        # Check if page is a 404 error page
+        error_heading = soup.select_one("h1")
+        if error_heading and "nichts beschädigt" in error_heading.get_text(strip=True):
+            print(f"⚠️  Warning: Product page is 404 error page for {url}")
+            return Product()  # Return empty product
 
         json_entries = self._extract_json_ld(soup)
         product_ld = self._find_ld(json_entries, {"Product"})
@@ -74,6 +86,7 @@ class NotinoScraper(SiteScraper):
         product_name = (
             self._clean_string(self._safe_get(product_ld, ["name"]))
             or self._pick_meta(soup, ["og:title", "twitter:title"]) 
+            or self._text(soup.select_one("h1[data-testid*='title']"))
             or self._text(soup.select_one("h1"))
             or self._text(soup.select_one("[data-testid='product-name']"))
         )
@@ -89,6 +102,7 @@ class NotinoScraper(SiteScraper):
             self._pick_image_from_ld(product_ld)
             or self._pick_meta(soup, ["og:image", "twitter:image"])
             or self._get_src(soup.select_one("[itemprop='image']"))
+            or self._get_src(soup.select_one("[data-testid*='image']"))
             or self._get_src(soup.select_one("[data-testid='product-image']"))
         )
 
@@ -98,6 +112,7 @@ class NotinoScraper(SiteScraper):
             or self._text(soup.select_one("[itemprop='brand']"))
             or self._text(soup.select_one("[data-testid='brand-name']"))
             or self._text(soup.select_one(".pd-brand"))
+            or self._extract_brand_from_breadcrumb(soup)
         )
 
         category = (
@@ -223,6 +238,14 @@ class NotinoScraper(SiteScraper):
         if not node:
             return ""
         return node.get("src", "") or node.get("data-src", "")
+    
+    def _extract_brand_from_breadcrumb(self, soup: BeautifulSoup) -> str:
+        """Extract brand name from breadcrumb navigation."""
+        breadcrumbs = soup.select("nav a, .breadcrumb a")
+        if breadcrumbs and len(breadcrumbs) > 1:
+            # Usually brand is in second breadcrumb
+            return self._text(breadcrumbs[1])
+        return ""
 
     def _extract_ingredients(self, soup: BeautifulSoup) -> List[str]:
         # Try multiple patterns for ingredients section

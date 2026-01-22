@@ -17,7 +17,7 @@ chrome_options.add_argument('--disable-blink-features=AutomationControlled')
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
-driver.get('https://www.notino.de/cerave/moisturizers-feuchtigkeitscreme-spf-50/p-16130224/')
+driver.get('https://www.notino.de/la-roche-posay/effaclar-duo-korregierende-und-erneuernde-pflege-gegen-hautunreinheiten/p-2673/')
 print("Waiting 10s for page load...")
 time.sleep(10)
 
@@ -30,10 +30,6 @@ except:
     print("Timeout waiting for h1")
 
 soup = BeautifulSoup(driver.page_source, 'lxml')
-
-# Save HTML
-with open('notino_real.html', 'w', encoding='utf-8') as f:
-    f.write(driver.page_source)
 
 # Look for brand
 print("\n=== Brand candidates ===")
@@ -57,4 +53,4 @@ for tag in soup.find_all(['h2', 'h3', 'h4'])[:15]:
     print(f"  {tag.name}: {tag.get_text(strip=True)[:60]}")
 
 driver.quit()
-print("\nHTML saved to notino_real.html")
+print("\nInspection complete")
