@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Union
 import json
 from .cleaning import clean_text, clean_list
 
@@ -9,18 +9,25 @@ class Product:
     barcode: str = ""
     product_name: str = ""
     description: str = ""
-    ingredients: List[str] = field(default_factory=list)
+    ingredients: Union[str, List[str]] = ""
     image: str = ""
     brand_name: str = ""
     category: str = ""
     concerns: List[str] = field(default_factory=list)
 
     def normalized(self) -> "Product":
+        # Handle ingredients as either string or list
+        normalized_ingredients = self.ingredients
+        if isinstance(self.ingredients, str):
+            normalized_ingredients = clean_text(self.ingredients)
+        elif isinstance(self.ingredients, list):
+            normalized_ingredients = clean_list(self.ingredients)
+        
         return Product(
             barcode=clean_text(self.barcode),
             product_name=clean_text(self.product_name),
             description=clean_text(self.description),
-            ingredients=clean_list(self.ingredients),
+            ingredients=normalized_ingredients,
             image=clean_text(self.image),
             brand_name=clean_text(self.brand_name),
             category=clean_text(self.category),
@@ -29,11 +36,15 @@ class Product:
 
     def to_pipe_row(self) -> str:
         normalized = self.normalized()
-        ingredients_field = (
-            json.dumps(normalized.ingredients, ensure_ascii=False)
-            if normalized.ingredients
-            else ""
-        )
+        # Handle ingredients as either string or list
+        if isinstance(normalized.ingredients, str):
+            ingredients_field = normalized.ingredients
+        else:
+            ingredients_field = (
+                json.dumps(normalized.ingredients, ensure_ascii=False)
+                if normalized.ingredients
+                else ""
+            )
         concerns_field = (
             json.dumps(normalized.concerns, ensure_ascii=False)
             if normalized.concerns

@@ -1,3 +1,4 @@
+import time
 from typing import Dict, Optional
 import requests
 from requests.adapters import HTTPAdapter
@@ -12,14 +13,14 @@ class HttpClient:
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/121.0.0.0 Safari/537.36"
         ),
-        retries: int = 3,
-        backoff_factor: float = 0.3,
+        retries: int = 5,
+        backoff_factor: float = 1.0,
     ) -> None:
         self.session = requests.Session()
         retry = Retry(
             total=retries,
             backoff_factor=backoff_factor,
-            status_forcelist=[429, 500, 502, 503, 504],
+            status_forcelist=[500, 502, 503, 504],  # handle 429 manually
             allowed_methods=["GET", "POST"],
         )
         adapter = HTTPAdapter(max_retries=retry)
@@ -44,13 +45,24 @@ class HttpClient:
         params: Optional[Dict[str, str]] = None,
         json_body: Optional[Dict] = None,
     ) -> requests.Response:
-        response = self.session.request(
-            method=method,
-            url=url,
-            headers=headers,
-            params=params,
-            json=json_body,
-            timeout=20,
-        )
-        response.raise_for_status()
-        return response
+        # Manual retry for 429 with exponential backoff
+        delay = 3.0
+        max_attempts = 12
+        attempt = 0
+        while True:
+            attempt += 1
+            response = self.session.request(
+                method=method,
+                url=url,
+                headers=headers,
+                params=params,
+                json=json_body,
+                timeout=20,
+            )
+            if response.status_code != 429:
+                response.raise_for_status()
+                return response
+            if attempt >= max_attempts:
+                response.raise_for_status()  # will raise HTTPError with 429
+            time.sleep(delay)
+            delay *= 1.8
