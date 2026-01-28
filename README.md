@@ -36,7 +36,7 @@ Python scaffolding for extracting cosmetic product data from multiple e-commerce
 
 ### Available Site Scrapers
 Currently implemented and placeholder scrapers:
-- `notino` - Notino (example implementation included)
+- `notino` - Notino (fully implemented with Selenium)
 - `inkeylist` - The INKEY List (fully implemented)
 - `sephora`, `sisley`, `korres`, `adaherbs`, `rossmann`, `caudalie`, `altanatura`, `dermedic`, `apivita`, `goodjuju`, `yesstyle`, `theordinary`, `versed` - (placeholders)
 
@@ -90,8 +90,8 @@ KungulScraper/
 │   │   └── writer.py      # Output file writer
 │   ├── sites/             # Site-specific scrapers
 │   │   ├── base.py        # Base scraper class
-│   │   ├── notino.py      # Notino scraper (example)
-│   │   ├── inkeylist.py   # INKEY List scraper (complete)
+│   │   ├── notino.py      # Notino scraper (fully implemented)
+│   │   ├── inkeylist.py   # INKEY List scraper (fully implemented)
 │   │   └── ...            # Other site scrapers
 │   └── main.py            # CLI entrypoint
 ├── requirements.txt       # Python dependencies
