@@ -2,10 +2,10 @@
 
 Python scaffolding for extracting cosmetic product data from multiple e-commerce sites. It follows the provided schema and exports `products.txt` as pipe-delimited UTF-8 text.
 
-## Contributors
+## Authors 
 
-- **[andetazeqiri](https://github.com/andetazeqiri)** - Repository Owner
-- **[orgito1015](https://github.com/orgito1015)** - Collaborator
+- **[andetazeqiri](https://github.com/andetazeqiri)** 
+- **[orgito1015](https://github.com/orgito1015)** 
 
 ## Setup
 
